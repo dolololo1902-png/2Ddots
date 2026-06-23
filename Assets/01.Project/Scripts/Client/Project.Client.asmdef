@@ -1,0 +1,25 @@
+{
+    "name": "Project.Client",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Entities",
+        "Unity.Mathematics",
+        "Unity.Transforms",
+        "Unity.NetCode",
+        "Unity.Collections",
+        "Project.Shared",
+        "Unity.Burst",
+        "Unity.Physics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "!UNITY_SERVER"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,26 @@
+{
+    "name": "Project.Shared",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Entities",
+        "Unity.NetCode",
+        "Unity.Mathematics",
+        "Unity.Transforms",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Entities.Hybrid",
+        "Unity.NetCode.Authoring.Hybrid",
+        "Unity.Physics",
+        "Unity.Physics.Hybrid",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
