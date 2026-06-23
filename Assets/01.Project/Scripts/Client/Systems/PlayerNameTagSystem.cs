@@ -1,6 +1,7 @@
 using Unity.Entities;
 using Unity.Collections;
 using Unity.Transforms;
+using Unity.NetCode;
 using UnityEngine;
 
 [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
@@ -38,7 +39,17 @@ public partial class PlayerNameTagSystem : SystemBase
         {
             // Resources에서 가져온 프리팹 복제
             var nameTagInstance = Object.Instantiate(_cachedNameTagPrefab);
-            Debug.Log($"[PlayerNameTagSystem] Resources 로더를 통해 이름표({playerName.ValueRO.Value})를 고양이({entity}) 머리 위에 생성 완료!");
+            
+            // 이름 갱신 (만약 GhostOwner 컴포넌트가 있다면 Network ID 값을 받아 Player X 로 표시)
+            string displayName = "Player";
+            if (SystemAPI.HasComponent<GhostOwner>(entity))
+            {
+                var owner = SystemAPI.GetComponent<GhostOwner>(entity);
+                displayName = $"Player {owner.NetworkId}";
+            }
+            nameTagInstance.SetName(displayName);
+
+            Debug.Log($"[PlayerNameTagSystem] 이름표({displayName})를 고양이({entity}) 머리 위에 생성 완료!");
 
             // 청소용 엔티티 생성 및 데이터 매핑
             var cleanEntity = ecb.CreateEntity();
@@ -47,9 +58,6 @@ public partial class PlayerNameTagSystem : SystemBase
             
             // 엔티티에 셋업 완료 링크 (ICleanupComponentData 상속 대상이므로 일반 AddComponent 호출)
             ecb.AddComponent(entity, new NameTagReference { TargetEntity = entity });
-
-            // 이름 갱신
-            nameTagInstance.SetName(playerName.ValueRO.Value.ToString());
         }
 
         ecb.Playback(EntityManager);
@@ -70,7 +78,7 @@ public partial class PlayerNameTagSystem : SystemBase
 
             var transform = EntityManager.GetComponentData<LocalTransform>(tagRef.TargetEntity);
             // 약간 왼쪽으로 한 번 더 이동 (X + 0.6f -> +0.4f)
-            nameTag.transform.position = new Vector3(transform.Position.x + 0.4f, transform.Position.y + 0.25f, -0.5f);
+            nameTag.transform.position = new Vector3(transform.Position.x + 0.2f, transform.Position.y + 0.25f, -0.5f);
         }
         tagRefEntities.Dispose();
 

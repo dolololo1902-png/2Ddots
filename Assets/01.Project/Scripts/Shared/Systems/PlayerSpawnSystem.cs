@@ -61,10 +61,15 @@ public partial struct PlayerSpawnSystem : ISystem
             });
 
             ecb.AddComponent(playerInstance, new GhostOwner { NetworkId = networkId.ValueRO.Value });
+
+            // 6. [추가] 고스트 플레이어 캐릭터 생성 시, 각 클라이언트의 Network ID 번호를 이름 뒤에 붙여 동기화합니다.
+            //    예: Network ID가 1이면 "Player 1", 2이면 "Player 2"
+            FixedString32Bytes customName = $"Player {networkId.ValueRO.Value}";
+            ecb.SetComponent(playerInstance, new PlayerName { Value = customName });
             
             // 정상적으로 생성이 완료된 경우에만 스폰 완료 표시를 해줍니다.
             ecb.AddComponent<NetworkIdSpawning>(entity);
-            UnityEngine.Debug.Log($"[PlayerSpawnSystem] NetworkId {networkId.ValueRO.Value}에 대해 성공적으로 PlayerPrefab을 스폰했습니다!");
+            UnityEngine.Debug.Log($"[PlayerSpawnSystem] NetworkId {networkId.ValueRO.Value}에 대해 성공적으로 PlayerPrefab을 스폰했습니다! (닉네임: {customName})");
         }
 
         ecb.Playback(state.EntityManager);
