@@ -9,7 +9,8 @@
         "Unity.Collections",
         "Project.Shared",
         "Unity.Burst",
-        "Unity.Physics"
+        "Unity.Physics",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

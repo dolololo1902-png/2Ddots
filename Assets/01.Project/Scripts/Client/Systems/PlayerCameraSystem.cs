@@ -11,24 +11,6 @@ public partial class PlayerCameraSystem : SystemBase
 {
     protected override void OnUpdate()
     {
-        // 디버그용으로 GhostOwnerIsLocal과 PlayerInputComponent를 가진 엔티티 개수를 확인해 봅니다.
-        int localOwnersCount = 0;
-        int inputComponentsCount = 0;
-        
-        foreach (var _ in SystemAPI.Query<RefRO<LocalTransform>>().WithAll<GhostOwnerIsLocal>())
-        {
-            localOwnersCount++;
-        }
-        foreach (var _ in SystemAPI.Query<RefRO<LocalTransform>>().WithAll<PlayerInputComponent>())
-        {
-            inputComponentsCount++;
-        }
-
-        if (UnityEngine.Time.frameCount % 60 == 0) // 매 60프레임마다 한 번씩만 출력
-        {
-            Debug.Log($"[PlayerCameraSystem] GhostOwnerIsLocal 개수: {localOwnersCount}, PlayerInputComponent 개수: {inputComponentsCount}");
-        }
-
         // 3. 로컬 플레이어가 소유한 엔티티(GhostOwnerIsLocal을 보유한 대상)의 최종 렌더링 트랜스폼(LocalToWorld)을 가져옵니다.
         foreach (var localToWorld in SystemAPI.Query<RefRO<LocalToWorld>>().WithAll<GhostOwnerIsLocal>())
         {

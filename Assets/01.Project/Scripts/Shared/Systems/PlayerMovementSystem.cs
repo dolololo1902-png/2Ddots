@@ -22,8 +22,9 @@ public partial struct PlayerMovementSystem : ISystem
         // ECS 물리 월드를 안전하게 쿼리하기 위한 싱글톤 획득
         var physicsWorld = SystemAPI.GetSingleton<PhysicsWorldSingleton>();
 
-        // 캐릭터 엔티티의 트랜스폼 및 입력을 가져옵니다. (동적 캐스트를 위해 PhysicsCollider 정보도 조회할 수 있게 쿼리)
-        foreach (var (transform, input, entity) in SystemAPI.Query<RefRW<LocalTransform>, RefRO<PlayerInputComponent>>().WithEntityAccess())
+        // 캐릭터 엔티티의 트랜스폼 및 입력을 가져옵니다. 
+        // [중요] PredictedSimulationSystemGroup에서는 Simulate 컴포넌트가 있는 대상(로컬 플레이어 및 서버의 모든 캐릭터)만 제어해야 원격 플레이어의 뚝뚝 끊기는 현상(Jitter)이 발생하지 않습니다.
+        foreach (var (transform, input, entity) in SystemAPI.Query<RefRW<LocalTransform>, RefRO<PlayerInputComponent>>().WithAll<Simulate>().WithEntityAccess())
         {
             float3 moveInput = new float3(input.ValueRO.Movement.x, input.ValueRO.Movement.y, 0f);
             if (math.lengthsq(moveInput) < 0.001f)

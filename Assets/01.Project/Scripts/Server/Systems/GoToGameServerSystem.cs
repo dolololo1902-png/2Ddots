@@ -12,16 +12,31 @@ public partial struct GoToGameServerSystem : ISystem
     {
         var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-        // 서버 월드에 존재하는 모든 클라이언트 접속 엔티티(NetworkId) 중 아직 인게임 처리가 안 된 대상 조회
-        foreach (var (networkId, entity) in SystemAPI.Query<RefRO<NetworkId>>().WithNone<SpawnProcessed>().WithEntityAccess())
+        // 클라이언트로부터 수신된 GoToGameRequest RPC 엔티티를 쿼리합니다.
+        foreach (var (request, rpcSource, entity) in SystemAPI.Query<RefRO<GoToGameRequest>, RefRO<ReceiveRpcCommandRequest>>().WithEntityAccess())
         {
-            // 중복 처리 방지 마크
-            ecb.AddComponent<SpawnProcessed>(entity);
+            // RPC를 수신한 대상 연결 엔티티
+            var connectionEntity = rpcSource.ValueRO.SourceConnection;
 
-            // 해당 클라이언트를 인게임 활성화 상태로 전환 (이로 인해 PlayerSpawnSystem이 동작하여 고양이를 스폰합니다.)
-            ecb.AddComponent<NetworkStreamInGame>(entity);
+            if (state.EntityManager.Exists(connectionEntity) && !state.EntityManager.HasComponent<SpawnProcessed>(connectionEntity))
+            {
+                // 중복 처리 방지 마크
+                ecb.AddComponent<SpawnProcessed>(connectionEntity);
 
-            UnityEngine.Debug.Log($"[GoToGameServerSystem] 서버가 클라이언트(NetworkId: {networkId.ValueRO.Value})의 스폰 처리를 직접 트리거했습니다!");
+                // 해당 클라이언트를 인게임 활성화 상태로 전환 (이로 인해 PlayerSpawnSystem이 동작하여 고양이를 스폰합니다.)
+                ecb.AddComponent<NetworkStreamInGame>(connectionEntity);
+
+                int networkIdVal = -1;
+                if (state.EntityManager.HasComponent<NetworkId>(connectionEntity))
+                {
+                    networkIdVal = state.EntityManager.GetComponentData<NetworkId>(connectionEntity).Value;
+                }
+
+                UnityEngine.Debug.Log($"[GoToGameServerSystem] 서버가 클라이언트(NetworkId: {networkIdVal})의 GoToGameRequest RPC를 정상 수신하여 스폰을 처리했습니다!");
+            }
+
+            // [중요] 수신된 RPC 엔티티는 프레임 지연 및 메모리 누수(Leak) 방지를 위해 반드시 파괴(Destroy)해야 합니다.
+            ecb.DestroyEntity(entity);
         }
 
         ecb.Playback(state.EntityManager);

@@ -35,18 +35,14 @@ public partial class PlayerNameTagSystem : SystemBase
         var ecb = new EntityCommandBuffer(Allocator.Temp);
 
         // 2. 이름 태그를 새로 할당받아야 하는 고양이 엔티티를 찾아 태그를 생성합니다.
-        foreach (var (playerName, entity) in SystemAPI.Query<RefRO<PlayerName>>().WithNone<NameTagReference>().WithEntityAccess())
+        //    PlayerInputComponent가 있는 고스트들을 대상으로 감지합니다.
+        foreach (var (inputComp, entity) in SystemAPI.Query<RefRO<PlayerInputComponent>>().WithNone<NameTagReference>().WithEntityAccess())
         {
             // Resources에서 가져온 프리팹 복제
             var nameTagInstance = Object.Instantiate(_cachedNameTagPrefab);
             
-            // 이름 갱신 (만약 GhostOwner 컴포넌트가 있다면 Network ID 값을 받아 Player X 로 표시)
+            // 초기 닉네임 기본 설정
             string displayName = "Player";
-            if (SystemAPI.HasComponent<GhostOwner>(entity))
-            {
-                var owner = SystemAPI.GetComponent<GhostOwner>(entity);
-                displayName = $"Player {owner.NetworkId}";
-            }
             nameTagInstance.SetName(displayName);
 
             Debug.Log($"[PlayerNameTagSystem] 이름표({displayName})를 고양이({entity}) 머리 위에 생성 완료!");
@@ -63,7 +59,7 @@ public partial class PlayerNameTagSystem : SystemBase
         ecb.Playback(EntityManager);
         ecb.Dispose();
 
-        // 3. 고양이 위치 실시간 추적 (Z축은 스프라이트보다 카메라 앞쪽인 -0.5f로 지정)
+        // 3. 고양이 위치 실시간 추적 및 이름 실시간 보정
         // 클래스 컴포넌트인 PlayerNameTag 조회를 위해 EntityManager.GetComponentObject 사용
         var tagRefQuery = GetEntityQuery(ComponentType.ReadOnly<NameTagReference>(), ComponentType.ReadOnly<PlayerNameTag>());
         var tagRefEntities = tagRefQuery.ToEntityArray(Allocator.Temp);
@@ -76,9 +72,23 @@ public partial class PlayerNameTagSystem : SystemBase
             if (nameTag == null) continue;
             if (!EntityManager.Exists(tagRef.TargetEntity)) continue;
 
+            if (!EntityManager.HasComponent<LocalTransform>(tagRef.TargetEntity)) continue;
+
             var transform = EntityManager.GetComponentData<LocalTransform>(tagRef.TargetEntity);
-            // 약간 왼쪽으로 한 번 더 이동 (X + 0.6f -> +0.4f)
+            // 약간 위쪽 및 보정
             nameTag.transform.position = new Vector3(transform.Position.x + 0.2f, transform.Position.y + 0.25f, -0.5f);
+
+            // [수정] GhostOwner의 NetworkId가 들어오는 즉시 감지하여 이름표 갱신
+            if (EntityManager.HasComponent<GhostOwner>(tagRef.TargetEntity))
+            {
+                var owner = EntityManager.GetComponentData<GhostOwner>(tagRef.TargetEntity);
+                // 기본값(-1 등)이 아닌 경우 이름 갱신
+                if (owner.NetworkId > 0)
+                {
+                    string targetName = $"Player {owner.NetworkId}";
+                    nameTag.SetName(targetName);
+                }
+            }
         }
         tagRefEntities.Dispose();
 

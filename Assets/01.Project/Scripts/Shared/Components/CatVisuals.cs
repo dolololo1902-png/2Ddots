@@ -40,4 +40,5 @@ public struct CatAnimationState : IComponentData
     public bool IsMoving;
     public int CurrentFrame;
     public float Timer;
+    public Unity.Mathematics.float3 LastPosition;
 }
